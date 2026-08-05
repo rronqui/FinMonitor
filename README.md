@@ -98,6 +98,8 @@ Os commits usam [Conventional Commits](https://www.conventionalcommits.org/) —
 
 A numeração de versão, o `CHANGELOG.md` e a tag de release são mantidos automaticamente pelo **release-please**: a cada push na `main` ele mantém um PR de release aberto; ao mergeá-lo, a tag `vX.Y.Z` e o GitHub Release são criados. Nunca edite `version` no `package.json` manualmente.
 
+> O workflow release-please usa o secret `RELEASE_PLEASE_TOKEN` (PAT): PRs criados com o `GITHUB_TOKEN` embutido não disparam outros workflows, então o CI não rodaria nos PRs de release. Se o token expirar, recrie-o em Settings > Actions > Secrets.
+
 A versão exibida na sidebar vem de `NEXT_PUBLIC_APP_VERSION` (injetado do `package.json` no build). Após um release, atualize o servidor local:
 
 ```powershell
