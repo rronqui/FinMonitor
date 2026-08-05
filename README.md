@@ -74,6 +74,10 @@ Crie um arquivo `.env` na raiz do projeto a partir do `.env.example` (copie e pr
 | `LLM_API_KEY` | Chave de API do chat (opcional; padrão `"ollama"` — suficiente para Ollama local; obrigatória para provedores hospedados, ex.: OpenAI/Groq) |
 > **Atenção:** o `.env` e a pasta `data/` estão no `.gitignore` — nunca versione credenciais nem o banco local.
 
+### Privacidade
+
+Todos os dados financeiros ficam **exclusivamente no SQLite local** (`data/finmonitor.db`) — nada é enviado a servidores de terceiros além do provedor Open Finance já autorizado por você na conexão bancária, e o chat com IA roda por padrão em modelo local (Ollama). Credenciais existem apenas no `.env`, fora do git.
+
 ## Scripts
 
 | Comando | Descrição |
@@ -123,10 +127,17 @@ src/
     banco-rest.ts     # camada REST sobre o provedor Open Finance
     sync.ts           # sincronização provedor → SQLite
     repo.ts           # leitura/escrita no snapshot
-    semantics.ts      # normalização de descrições e detecção de recorrências
-    analytics.ts      # séries, orçamentos, projeções, insights
-  components/chat/    # ferramentas e prompt do chat com IA
+    semantics.ts      # normalização de descrições e categorização
+    analytics.ts      # séries, orçamentos, projeções, insights, recorrências
+    chat/             # ferramentas, prompt e cálculo do chat com IA
+    __tests__/        # suíte Vitest do núcleo analítico
+  components/         # UI compartilhada (sidebar, chat dock, primitives)
+scripts/              # start/stop do servidor + hooks git (commit-msg, pre-push)
+.github/              # CI, release-please, templates de issue/PR
 data/                 # SQLite local (não versionado)
-scripts/              # start/stop do servidor de produção
 logs/                 # saída do servidor em produção (não versionado)
 ```
+
+## Licença
+
+[MIT](LICENSE) — use, modifique e distribua à vontade.
