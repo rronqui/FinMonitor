@@ -71,6 +71,7 @@ Crie um arquivo `.env` na raiz do projeto com as variáveis abaixo.
 | `OPENFINANCE_BASE` | Base REST Open Finance usada pelo cliente |
 | `LLM_BASE_URL` | Endpoint OpenAI-compatível para o chat (ex.: `http://localhost:11434/v1`) |
 | `LLM_MODEL` | Modelo usado pelo chat |
+| `LLM_API_KEY` | Chave de API do chat (opcional; padrão `"ollama"` — suficiente para Ollama local; obrigatória para provedores hospedados, ex.: OpenAI/Groq) |
 > **Atenção:** o `.env` e a pasta `data/` estão no `.gitignore` — nunca versione credenciais nem o banco local.
 
 ## Scripts
