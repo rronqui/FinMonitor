@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/rronqui/FinMonitor/compare/v1.3.0...v1.4.0) (2026-08-05)
+
+
+### Features
+
+* testes de UI de todas as telas e componentes ([#22](https://github.com/rronqui/FinMonitor/issues/22)) ([#23](https://github.com/rronqui/FinMonitor/issues/23)) ([87b2c14](https://github.com/rronqui/FinMonitor/commit/87b2c144ae99492a6725667e008c415291a0576b))
+
 ## [1.3.0](https://github.com/rronqui/FinMonitor/compare/v1.2.0...v1.3.0) (2026-08-05)
 
 
