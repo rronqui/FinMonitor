@@ -8,13 +8,13 @@ export default defineConfig({
   test: {
     projects: [
       defineProject({
-        test: { include: ["src/**/*.test.*"] },
+        test: { include: ["src/lib/**/*.test.*"] },
         resolve: { alias: { "@": root } },
       }),
       defineProject({
         test: {
           name: "ui",
-          include: ["app/**/*.test.tsx"],
+          include: ["app/**/*.test.tsx", "src/components/**/*.test.tsx"],
           environment: "jsdom",
         },
         resolve: { alias: { "@": root } },
