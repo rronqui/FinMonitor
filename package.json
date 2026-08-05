@@ -13,7 +13,8 @@
     "smoke": "tsx src/main.ts",
     "test": "vitest run",
     "start:server": "node scripts/start.mjs",
-    "stop:server": "node scripts/stop.mjs"
+    "stop:server": "node scripts/stop.mjs",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "3.0.20",
@@ -32,6 +33,8 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.0.0",

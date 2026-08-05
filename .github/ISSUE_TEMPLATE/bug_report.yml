@@ -1,0 +1,33 @@
+name: Bug
+description: Relatar um problema no FinMonitor
+title: "[bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: comportamento
+    attributes:
+      label: Comportamento observado
+      description: O que aconteceu? Inclua mensagens de erro, se houver.
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamento esperado
+      description: O que deveria acontecer.
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passos para reproduzir
+      description: Sequência de ações ou condições para chegar ao problema.
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Onde ocorreu (página/card/endpoint), dados envolvidos, versão do app.
+    validations:
+      required: false

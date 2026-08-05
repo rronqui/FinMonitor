@@ -88,6 +88,25 @@ Crie um arquivo `.env` na raiz do projeto a partir do `.env.example` (copie e pr
 
 O start aceita opções: `node scripts/start.mjs --port 8080 --host 127.0.0.1 --force-build`.
 
+## Versionamento e releases
+
+O projeto segue [SemVer](https://semver.org/lang/pt-BR/): **MAJOR** para breaking changes, **MINOR** para novas features, **PATCH** para bugfixes. Enquanto estivermos em `1.x`, breaking changes exigem nota explícita.
+
+Toda mudança no código entra via GitHub: abra uma **issue** (bug ou nova feature), crie uma branch (`fix/#N-…` ou `feat/#N-…`) e abra um **PR** vinculado (`Closes #N`). O merge na `main` é protegido (branch protection + hooks locais impedem push direto).
+
+Os commits usam [Conventional Commits](https://www.conventionalcommits.org/) — o tipo do commit determina o bump de versão (`fix:` → patch, `feat:` → minor, `!` → major), validado por commitlint no hook de commit.
+
+A numeração de versão, o `CHANGELOG.md` e a tag de release são mantidos automaticamente pelo **release-please**: a cada push na `main` ele mantém um PR de release aberto; ao mergeá-lo, a tag `vX.Y.Z` e o GitHub Release são criados. Nunca edite `version` no `package.json` manualmente.
+
+A versão exibida na sidebar vem de `NEXT_PUBLIC_APP_VERSION` (injetado do `package.json` no build). Após um release, atualize o servidor local:
+
+```powershell
+git pull
+npm run start:server -- --force-build
+```
+
+**Antes de qualquer release com mudança de dados**: faça backup de `data/finmonitor.db` (SQLite local, fora do git). Migrações são forward-only — reverter código não reverte schema.
+
 ## Estrutura
 
 ```

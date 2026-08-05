@@ -1,0 +1,27 @@
+name: Nova feature
+description: Solicitar uma nova funcionalidade ou melhoria
+title: "[feat] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema ou necessidade
+      description: Que dor ou limitação a feature resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: solucao
+    attributes:
+      label: Solução proposta
+      description: Descreva o comportamento desejado, incluindo onde aparece na UI.
+    validations:
+      required: true
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critérios de aceite
+      description: Como saber que a feature está pronta?
+      value: "- [ ] "
+    validations:
+      required: true
