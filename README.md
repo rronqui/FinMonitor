@@ -62,7 +62,7 @@ npm run stop:server    # encerra o servidor iniciado acima
 
 ### Variáveis de ambiente (`.env`)
 
-Crie um arquivo `.env` na raiz do projeto com as variáveis abaixo.
+Crie um arquivo `.env` na raiz do projeto a partir do `.env.example` (copie e preencha), com as variáveis abaixo.
 
 | Variável | Descrição |
 |---|---|
