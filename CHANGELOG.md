@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/rronqui/FinMonitor/compare/v1.2.0...v1.3.0) (2026-08-05)
+
+
+### Features
+
+* testes de UI da visão geral e extração da lógica do dashboard ([#19](https://github.com/rronqui/FinMonitor/issues/19)) ([#20](https://github.com/rronqui/FinMonitor/issues/20)) ([e97a93a](https://github.com/rronqui/FinMonitor/commit/e97a93a24ee67a8df42e9f446fed4509818f09a9))
+
 ## [1.2.0](https://github.com/rronqui/FinMonitor/compare/v1.1.0...v1.2.0) (2026-08-05)
 
 
