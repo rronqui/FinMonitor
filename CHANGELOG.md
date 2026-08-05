@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/rronqui/FinMonitor/compare/v1.1.0...v1.2.0) (2026-08-05)
+
+
+### Features
+
+* migrações de schema versionadas com meta.schema_version ([#16](https://github.com/rronqui/FinMonitor/issues/16)) ([#17](https://github.com/rronqui/FinMonitor/issues/17)) ([3ec4d2d](https://github.com/rronqui/FinMonitor/commit/3ec4d2de895ee6abfd37aa2ef4bd5d52fc1e5249))
+
 ## [1.1.0](https://github.com/rronqui/FinMonitor/compare/v1.0.1...v1.1.0) (2026-08-05)
 
 
