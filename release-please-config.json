@@ -2,7 +2,8 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "include-component-in-tag": false
+      "include-component-in-tag": false,
+      "release-as": "1.0.0"
     }
   }
 }
