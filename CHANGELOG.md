@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/rronqui/FinMonitor/compare/v1.0.1...v1.1.0) (2026-08-05)
+
+
+### Features
+
+* skill ship: automação do fluxo de releases e deploy ([#13](https://github.com/rronqui/FinMonitor/issues/13)) ([#14](https://github.com/rronqui/FinMonitor/issues/14)) ([2b6e9a2](https://github.com/rronqui/FinMonitor/commit/2b6e9a25c8ed83324cd81c97f718b40260bc6186))
+
 ## [1.0.1](https://github.com/rronqui/FinMonitor/compare/v1.0.0...v1.0.1) (2026-08-05)
 
 
