@@ -1,0 +1,13 @@
+# Changelog
+
+## [1.0.0](https://github.com/rronqui/FinMonitor/compare/v1.0.0...v1.0.0) (2026-08-05)
+
+
+### Features
+
+* fluxo de releases com CI, release-please e versão na sidebar ([#1](https://github.com/rronqui/FinMonitor/issues/1)) ([112a47a](https://github.com/rronqui/FinMonitor/commit/112a47a8a55f922add474dad8d80b163674cb471))
+
+
+### Bug Fixes
+
+* restaurar manifest do release-please exigido com release-as ([#2](https://github.com/rronqui/FinMonitor/issues/2)) ([10c419a](https://github.com/rronqui/FinMonitor/commit/10c419a5b8e20ac3aafccf6e0e55590bec00fc93))
