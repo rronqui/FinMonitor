@@ -1,0 +1,7 @@
+{
+  "dbPath": "data/finmonitor.db",
+  "buildCommand": "npm run build",
+  "stopCommand": "npm run stop:server",
+  "startCommand": "npm run start:server",
+  "versionCheckUrl": "http://localhost:3000"
+}

@@ -113,6 +113,18 @@ npm run start:server -- --force-build
 
 **Antes de qualquer release com mudança de dados**: faça backup de `data/finmonitor.db` (SQLite local, fora do git). Migrações são forward-only — reverter código não reverte schema.
 
+## Automação do fluxo (skill ship)
+
+O ritual do fluxo está automatizado na skill omp `ship` (`~/.agents/skills/ship`):
+
+| Comando | O que faz |
+|---|---|
+| `node ~/.agents/skills/ship/bin/ship.mjs new --bug "título"` (ou `--feat`) | Cria a issue, atualiza a main e abre a branch `fix/#N-…`/`feat/#N-…` |
+| `node ~/.agents/skills/ship/bin/ship.mjs ship "descrição"` | Commit com prefixo derivado da branch, push, PR com `Closes #N` e auto-merge squash |
+| `node ~/.agents/skills/ship/bin/ship.mjs deploy` | Backup do banco, pull, rebuild, restart e checagem da versão servida |
+
+O manifesto deste repo é `ship.config.json`. Tarefas não-triviais passam pelo protocolo TDD (`skill://tdd-orchestrator`), sempre com merge final via PR — nunca merge local na main.
+
 ## Estrutura
 
 ```
