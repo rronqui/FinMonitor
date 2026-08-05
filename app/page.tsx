@@ -46,26 +46,44 @@ import {
   type CategoryDelta,
   type WindowComparison,
 } from "@/src/lib/hooks";
+import {
+  BUDGETS_KEY,
+  buildAvisos,
+  buildBudgetRows,
+  buildDestaques,
+  buildFlowData,
+  isCurrentMonth,
+  loadBudgets,
+} from "@/src/lib/overview";
 
 const SERIES_COLORS = ["#6366F1", "#22C55E", "#EAB308", "#06B6D4"];
-const BUDGETS_KEY = "finmonitor.budgets.v1";
 
 type FlowView = "contas" | "investimentos" | "tudo";
 type Kind = "spend" | "income";
+const KIND_OPTIONS = [
+  { value: "spend", label: "Gastos" },
+  { value: "income", label: "Entradas" },
+] as const;
 
-function isCurrentMonth(monthKey: string): boolean {
-  const now = new Date();
-  return monthKey === `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+function KindSelector({ value, onChange }: { value: Kind; onChange: (value: Kind) => void }) {
+  return (
+    <div className="flex overflow-hidden rounded-lg border border-border text-[10px]">
+      {KIND_OPTIONS.map(({ value: option, label }) => (
+        <button
+          key={option}
+          onClick={() => onChange(option)}
+          className={`px-2.5 py-1 font-medium ${
+            value === option ? "bg-primary/20 text-primary" : "text-muted hover:bg-surface2"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
-function loadBudgets(): Record<string, number> {
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem(BUDGETS_KEY) : null;
-    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
-  } catch {
-    return {};
-  }
-}
+
 
 /** Gating de erro/loading para o conteúdo de um Card: skeleton → erro → children. */
 function CardBody({
@@ -144,26 +162,8 @@ function ComparisonCard({
   return (
     <Card
       title={title}
-      action={
-        <div className="flex overflow-hidden rounded-lg border border-border text-[10px]">
-          {(
-            [
-              ["spend", "Gastos"],
-              ["income", "Entradas"],
-            ] as Array<[Kind, string]>
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setKind(v)}
-              className={`px-2.5 py-1 font-medium ${
-                kind === v ? "bg-primary/20 text-primary" : "text-muted hover:bg-surface2"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      }
+      action={<KindSelector value={kind} onChange={setKind} />}
+
     >
       <div className="space-y-3">
         <div>
@@ -260,26 +260,7 @@ function RecurrentsCard() {
   return (
     <Card
       title={kind === "spend" ? "Recorrentes — gastos" : "Recorrentes — entradas"}
-      action={
-        <div className="flex overflow-hidden rounded-lg border border-border text-[10px]">
-          {(
-            [
-              ["spend", "Gastos"],
-              ["income", "Entradas"],
-            ] as Array<[Kind, string]>
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setKind(v)}
-              className={`px-2.5 py-1 font-medium ${
-                kind === v ? "bg-primary/20 text-primary" : "text-muted hover:bg-surface2"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      }
+      action={<KindSelector value={kind} onChange={setKind} />}
     >
       <CardBody q={recurrents} h="h-32 w-full">
       <div className="space-y-2">
@@ -385,30 +366,7 @@ export default function OverviewPage() {
   const labelOf = (key: string) => translatedByEn.get(key) ?? prettifyCategory(key);
 
   // ---- fluxo diário
-  const flowData = (() => {
-    if (series.length === 0 && investmentSeries.length === 0) {
-      return [] as Array<Record<string, number | string>>;
-    }
-    const byDay = new Map<string, Record<string, number | string>>();
-    for (const s of series) {
-      for (const p of s.points) {
-        const row = byDay.get(p.day) ?? { day: p.day };
-        row[s.accountId] = p.saldo;
-        byDay.set(p.day, row);
-      }
-    }
-    for (const p of investmentSeries) {
-      const row = byDay.get(p.day) ?? { day: p.day };
-      row.investimentos = p.investido;
-      byDay.set(p.day, row);
-    }
-    const out = [...byDay.values()].sort((a, b) => String(a.day).localeCompare(String(b.day)));
-    for (const row of out) {
-      const contas = series.reduce((s, acc) => s + Number(row[acc.accountId] ?? 0), 0);
-      row.total = Math.round((contas + Number(row.investimentos ?? 0)) * 100) / 100;
-    }
-    return out;
-  })();
+  const flowData = buildFlowData(series, investmentSeries);
   const flowSeries = [
     ...series.map((s, i) => ({ key: s.accountId, name: s.name, color: SERIES_COLORS[i % SERIES_COLORS.length] })),
     { key: "investimentos", name: "Investimentos", color: "#A855F7" },
@@ -434,16 +392,7 @@ export default function OverviewPage() {
 
   // ---- orçamentos
   const spentByCat = budgetsSpent.data?.categories ?? [];
-  const budgetRows = useMemo(() => {
-    const withBudget = spentByCat
-      .filter((s) => (budgets[s.key] ?? 0) > 0)
-      .map((s) => ({ ...s, limit: budgets[s.key] }));
-    const top = [...spentByCat].sort((a, b) => b.spent - a.spent).slice(0, 5);
-    const merged = new Map<string, (typeof withBudget)[number]>();
-    for (const r of withBudget) merged.set(r.key, r);
-    for (const r of top) if (!merged.has(r.key)) merged.set(r.key, { ...r, limit: budgets[r.key] ?? 0 });
-    return [...merged.values()].sort((a, b) => b.spent - a.spent).slice(0, 6);
-  }, [spentByCat, budgets]);
+  const budgetRows = useMemo(() => buildBudgetRows(spentByCat, budgets), [spentByCat, budgets]);
 
   function setBudget(key: string, value: number) {
     setBudgets((cur) => {
@@ -459,68 +408,31 @@ export default function OverviewPage() {
   }
 
   // ---- destaques (regras determinísticas, comparações honestas)
-  const destaques = useMemo(() => {
-    const out: Array<{ icon: "up" | "down" | "warn"; text: string }> = [];
-    if (comp) {
-      if (comp.rolling.deltaSpendPct !== null) {
-        out.push({
-          icon: comp.rolling.deltaSpendPct > 0 ? "up" : "down",
-          text: `Gastos dos últimos 30 dias ${comp.rolling.deltaSpendPct > 0 ? "subiram" : "caíram"} ${Math.abs(comp.rolling.deltaSpendPct).toFixed(0)}% vs os 30 dias anteriores (${brl(comp.rolling.current.spend)} vs ${brl(comp.rolling.previous.spend)}).`,
-        });
-      }
-      if (comp.sameWindow.deltaSpendPct !== null) {
-        out.push({
-          icon: comp.sameWindow.deltaSpendPct > 0 ? "up" : "down",
-          text: `Mesma janela (${comp.elapsedDays} dias): ${comp.sameWindow.deltaSpendPct > 0 ? "+" : ""}${comp.sameWindow.deltaSpendPct.toFixed(0)}% em gastos vs mês anterior (${brl(comp.sameWindow.current.spend)} vs ${brl(comp.sameWindow.previous.spend)}).`,
-        });
-      }
-    }
-    const topCat = [...categoryData].sort((a, b) => b.valor - a.valor)[0];
-    if (topCat) out.push({ icon: "down", text: `Maior categoria em 30 dias: ${labelOf(topCat.key)} (${brl(topCat.valor)}).` });
-    const biggestRise = [...(recurrents.data?.recorrentes ?? [])]
-      .filter((r) => r.kind === "spend" && r.deltaPct !== null && r.deltaPct > 5)
-      .sort((a, b) => (b.deltaPct ?? 0) - (a.deltaPct ?? 0))[0];
-    if (biggestRise)
-      out.push({
-        icon: "up",
-        text: `Gasto recorrente com ${labelOf(biggestRise.category)} subiu ${biggestRise.deltaPct?.toFixed(0)}% na última recorrência.`,
-      });
-    if (firstNegative)
-      out.push({
-        icon: "warn",
-        text: `Projeção de caixa fica negativa em ${dateBR(firstNegative.day)} (${brl(firstNegative.saldo)}).`,
-      });
-    return out.slice(0, 4);
+  const destaques = useMemo(
+    () =>
+      buildDestaques({
+        comp,
+        categoryData,
+        recurrents: recurrents.data?.recorrentes,
+        firstNegative,
+        labelOf,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comp, categoryData, recurrents.data, firstNegative, translatedByEn]);
+    [comp, categoryData, recurrents.data, firstNegative, translatedByEn],
+  );
 
   // ---- avisos
-  const avisos = useMemo(() => {
-    const out: Array<{ tone: "yellow" | "red"; text: string }> = [];
-    const today = new Date();
-    if (nextBill?.dueDate) {
-      const due = new Date(nextBill.dueDate.slice(0, 10) + "T00:00:00Z");
-      const todayMidnightUtc = new Date(today.toISOString().slice(0, 10) + "T00:00:00Z");
-      const days = Math.round((due.getTime() - todayMidnightUtc.getTime()) / 86_400_000);
-      if (days >= 0 && days <= 3)
-        out.push({
-          tone: "yellow",
-          text: `Fatura de ${brl(nextBill.totalAmount)} vence em ${days} dia(s) (${dateBR(nextBill.dueDate)}).`,
-        });
-    }
-    for (const b of overdueBills) {
-      if (disputedCycle && Math.abs(parseAmount(b.totalAmount) - parseAmount(disputedCycle.balance)) <= 15) continue;
-      out.push({
-        tone: "red",
-        text: `Fatura de ${dateBR(b.dueDate)} (${brl(b.totalAmount)}) em aberto: ${billStatusBadge(b.payment_status).label.toLowerCase()}.`,
-      });
-    }
-    for (const c of connections) {
-      if (c.status === "LOGIN_ERROR") out.push({ tone: "red", text: `Conexão ${c.connector_name} com erro de login — reconecte.` });
-    }
-    return out.slice(0, 4);
+  const avisos = useMemo(
+    () =>
+      buildAvisos({
+        nextBill,
+        overdueBills,
+        connections,
+        disputedCycle,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextBill, overdueBills, connections, disputedCycle]);
+    [nextBill, overdueBills, connections, disputedCycle],
+  );
 
   function openCategory(key: string | null) {
     if (!key) return;
