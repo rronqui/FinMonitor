@@ -99,6 +99,9 @@ export function Sidebar() {
         <div className="flex flex-col gap-1 px-5 py-4">
           <SyncChip />
           <p className="text-[10px] text-muted">Dados via Banco MCP · uso local</p>
+          <p className="text-[10px] text-muted" title="Versão da aplicação">
+            v{process.env.NEXT_PUBLIC_APP_VERSION}
+          </p>
         </div>
       </aside>
     </>
