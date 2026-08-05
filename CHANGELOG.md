@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/rronqui/FinMonitor/compare/v1.0.0...v1.0.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* pre-push lê refs da stdin como o git realmente invoca ([#8](https://github.com/rronqui/FinMonitor/issues/8)) ([6fc41ef](https://github.com/rronqui/FinMonitor/commit/6fc41ef1197ab1daf3658fb864b84af8340bb4a4))
+
 ## [1.0.0](https://github.com/rronqui/FinMonitor/compare/v1.0.0...v1.0.0) (2026-08-05)
 
 
