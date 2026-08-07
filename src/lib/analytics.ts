@@ -188,8 +188,10 @@ export function buildProjection(days: number): { days: ProjectionPoint[]; premis
   // deltas). Uma recorrência só entra nas premissas se projeta ≥1 delta DENTRO
   // da janela; projeções no passado relativo a today nunca aparecem no gráfico.
   const nowMs = Date.now();
-  const startDay = new Date(nowMs).toISOString().slice(0, 10);
-  const endDay = new Date(nowMs + (days - 1) * 86_400_000).toISOString().slice(0, 10);
+  const fmtLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const startDay = fmtLocal(new Date(nowMs));
+  const endDay = fmtLocal(new Date(nowMs + (days - 1) * 86_400_000));
   for (const r of detectRecurrents()) {
     const signed = r.kind === "income" ? r.monthly : -r.monthly;
     const anchor = new Date(`${r.lastDate}T00:00:00Z`);

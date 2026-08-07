@@ -21,6 +21,7 @@ const tx = (id: string, date: string, description: string) => ({
   amount: "-100.00",
   category: "streaming",
 });
+const dueDay = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
 
 beforeAll(async () => {
   tmpDir = mkdtempSync(path.join(tmpdir(), "finmonitor-test-"));
@@ -38,6 +39,15 @@ beforeAll(async () => {
     tx(`projection-route-${m}`, dayInMonth(m, 10), description),
   );
   repo.upsertTransactions("BANK", "acc-projection-route", rows as never[]);
+  dbMod
+    .db()
+    .prepare("INSERT INTO loans (id, raw) VALUES (?, ?)")
+    .run(
+      "loan-projection-route",
+      JSON.stringify({
+        balloonPayments: [{ dueDate: `${dueDay}T12:00:00.000Z`, amount: { value: 500 } }],
+      }),
+    );
 
   route = await import("../../../app/api/bank/projection/route");
 });
@@ -62,7 +72,12 @@ describe("GET /api/bank/projection — wire das premissas", () => {
     expect(body.days).toHaveLength(60);
     expect(body.premissas).toBeDefined();
     expect(body.premissas?.recorrentes).toHaveLength(1);
+    expect(body.premissas?.recorrentes[0]?.key).toBe("streaming::route projection assinatura");
+    expect(body.premissas?.recorrentes[0]?.kind).toBe("spend");
+    expect(body.premissas?.recorrentes[0]?.label).toBe("ROUTE PROJECTION ASSINATURA");
     expect(body.premissas?.recorrentes[0]?.monthly).toBe(100);
-    expect(body.premissas?.unicos).toEqual([]);
+    expect(body.premissas?.unicos).toEqual([
+      { day: dueDay, value: 500, label: "Parcela única de empréstimo" },
+    ]);
   });
 });

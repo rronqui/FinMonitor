@@ -59,6 +59,12 @@ Após o GREEN, ambos os comportamentos são garantidos pelos guards novos
 (estabilidade ≥3 meses ±30% da mediana e recency ≤1 ciclo perdido, janela
 365 dias) e verificados na suíte verde; detalhes em [spec.md](./spec.md).
 
+Nota: este desvio refere-se aos fixtures originais do T-001; após o
+fortalecimento pós-review (fixtures de AC-001 com somas variadas e de AC-005
+com 3 meses de ocorrência), ambos os casos são garantidos pelos guards
+independentemente do acidente de janela do baseline — estado final em
+[spec.md](./spec.md) ("Reforço pós-review").
+
 ## Stack e Dependências
 
 | Componente | Tecnologia | Justificativa |
@@ -79,16 +85,17 @@ Após o GREEN, ambos os comportamentos são garantidos pelos guards novos
 | `src/lib/hooks.ts` | `useProjection` tipado; interface `ProjectionPremissas` duplicada (sem importar analytics) |
 | `src/lib/overview.ts` | Texto do aviso warn de `firstNegative` |
 | `app/page.tsx` | Card de projeção (rodapé runway + `<details>` de premissas); RecurrentsCard (janela 365 dias + title) |
-| `src/lib/__tests__/recurrents.test.ts` | Reescrito (T-001): 6 casos — variável mantido/ajustado, 2 meses invertido, 6 meses novo, recency ×2, windfall |
-| `src/lib/__tests__/projection.test.ts` | Criado (T-001): 4 casos — recorrência estável, renda antiga, windfall, balloon payment |
+| `src/lib/__tests__/recurrents.test.ts` | Reescrito (T-001) e fortalecido pós-review: 8 casos — AC-003 variável, AC-002 2 meses, AC-001 6 ocorrências (somas variadas 90..120), AC-004a/AC-004b recency, AC-005 windfall 3 meses, AC-006 income positivo, AC-003b clusters ±30% |
+| `src/lib/__tests__/projection.test.ts` | Criado (T-001) e fortalecido pós-review: 6 casos — AC-006a (fixture [6..1] + data exata + saldo 800), AC-006b renda antiga, AC-006c windfall, AC-006e income positivo, AC-006f fronteira de horizonte (F dinâmico), AC-006d balloon payment |
+| `src/lib/__tests__/projection-route.test.ts` | Criado pós-review (T-002): 1 caso — wire da rota com shape completa do recorrente e balloon dentro do horizonte |
 | `src/lib/__tests__/overview.test.ts` | Asserção do texto warn (T-002) |
-| `app/__tests__/page.test.tsx` | Teste novo do `<details>` de premissas (T-003) |
+| `app/__tests__/page.test.tsx` | Teste novo do `<details>` de premissas (AC-007, T-003) + teste RF-008 (janela 365 dias + title do link) |
 
 ## Tarefas Derivadas
 
 | ID | Descrição | AC | Dependências |
 |---|---|---|---|
-| T-001 | test-author RED: reescrever `src/lib/__tests__/recurrents.test.ts` (casos 1–6) e criar `src/lib/__tests__/projection.test.ts` (casos 1–4) | AC-001..AC-006 | — |
+| T-001 | test-author RED: reescrever `src/lib/__tests__/recurrents.test.ts` (8 casos) e criar `src/lib/__tests__/projection.test.ts` (6 casos) + `src/lib/__tests__/projection-route.test.ts` (1 caso) | AC-001..AC-006 | — |
 | T-002 | backend-developer GREEN: `analytics.ts` (detectRecurrents + buildProjection/premissas) + rota projection + `hooks.ts` + `overview.ts` + asserção `overview.test.ts` | AC-001..AC-006, AC-008 | T-001 |
 | T-003 | frontend-developer GREEN: `app/page.tsx` card de projeção + RecurrentsCard + teste de UI em `page.test.tsx` | AC-006, AC-007 | T-001, T-002 |
 | T-004 | validator: validação consolidada (typecheck, suíte completa, e2e dados reais) | AC-001..AC-009 | T-002, T-003 |

@@ -1,6 +1,6 @@
 # Interface Contract: specs004-honest-cash-projection
 
-> **Versão:** 0.2.1
+> **Versão:** 0.2.2
 > **Status:** APPROVED
 
 ## Escopo
@@ -35,9 +35,12 @@ export interface ProjectionPremissas {
 
 - `recorrentes`: somente recorrências que projetaram ≥1 delta no horizonte;
   ordem por `monthly` desc (herdada de `detectRecurrents`). **Horizonte** =
-  os dias efetivamente cobertos pelo loop de `days`
-  (`today .. today+days-1`); uma recorrência só aparece se ao menos uma
-  projeção mensal cair dentro desse intervalo.
+  os dias efetivamente cobertos pelo loop de saída
+  (`today .. today+days-1`); `startDay`/`endDay` são derivados no MESMO
+  calendário local do loop de saída (helper `fmtLocal` — componentes
+  `getFullYear/getMonth/getDate` locais; NÃO usa `toISOString`/UTC), de modo
+  que a comparação com as chaves de `days` é consistente; uma recorrência só
+  aparece se ao menos uma projeção mensal cair dentro desse intervalo.
 - `unicos`: balloon payments de loans, label fixo
   `"Parcela única de empréstimo"`; ordenados por `day` asc. Lista **todos**
   os balloon payments conhecidos, independentemente do horizonte pedido
@@ -50,8 +53,11 @@ export interface ProjectionPremissas {
 
 - A rota lê **apenas query params** (`url.searchParams`); qualquer body é
   ignorado (GET sem body).
-- Query param `days`: número de dias do horizonte — default `60`, clamp
-  `1..180` (`Math.min(180, Math.max(1, …))`; não-numérico → default `60`).
+- Query param `days`: número de dias do horizonte — default `60`, aplicado
+  quando o param está **ausente** OU **vazio** (`?days=` — a rota trata
+  string vazia como ausente) OU é não-numérico; valores numéricos são
+  truncados (`Math.floor`) e sofrem clamp `1..180`
+  (`Math.min(180, Math.max(1, …))`).
 
 ### Response (0.2.0)
 
@@ -62,7 +68,7 @@ export interface ProjectionPremissas {
   ],
   "premissas": {
     "recorrentes": [
-      { "key": "Insurance::mensalidade de seguro porto seguro", "label": "PORTO SEGURO SEGURO", "kind": "spend", "monthly": 555.59 }
+      { "key": "Insurance::mensalidade de seguro porto seguro", "label": "MENSALIDADE DE SEGURO   PORTO SEGURO", "kind": "spend", "monthly": 555.59 }
     ],
     "unicos": [
       { "day": "2026-08-17", "value": 500, "label": "Parcela única de empréstimo" }
@@ -117,6 +123,7 @@ Mudam apenas os critérios de inclusão (RF-001) e o cálculo de `monthly`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 0.2.2 | 2026-08-07 | Sincronização pós rodada 2 do deep-review: (1) horizonte de `premissas.recorrentes` explicitado como derivado no mesmo calendário local do loop de saída (`fmtLocal`), cobrindo `today .. today+days-1`; (2) Request: `?days=` vazio tratado como ausente → default `60` (não-numérico também → `60`; numérico com `Math.floor` antes do clamp `1..180`); (3) label do exemplo de response corrigido para a descrição original (`last.label`): `MENSALIDADE DE SEGURO   PORTO SEGURO`. Sem mudança de comportamento além do já entregue. |
 | 0.2.1 | 2026-08-07 | Correções de documentação pós deep-review: exemplo de response usa a `recKey` real (`Insurance::mensalidade de seguro porto seguro`); seção Request reescrita como URL de exemplo (GET lê só query params, body ignorado); horizonte de `premissas.recorrentes` explicitado (`today .. today+days-1`) e `unicos` sem filtro de horizonte (intencional). Sem mudança de comportamento. |
 | 0.2.0 | 2026-08-07 | `buildProjection` retorna `{ days, premissas }`; rota responde `{ days, premissas }`; hook tipa `premissas?` opcional; `detectRecurrents` com janela 365 dias + filtros de estabilidade (≥3 meses ±30% da mediana) e recency (≤1 ciclo perdido); `monthly` = mediana das somas mensais; rodapé de runway + `<details>` de premissas; texto do aviso warn reenquadrado. **Status APPROVED** após peer-review sem P0/P1 (entrega: commits `bb0baad`/`a082fcb`/`f568f73`) |
 | 0.1.0 | — | Contrato anterior: `buildProjection` retornava só `days`; rota respondia só `days`; janela 120 dias, ≥2 meses distintos, `monthly` = média por ocorrência |

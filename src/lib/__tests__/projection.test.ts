@@ -85,7 +85,7 @@ describe("buildProjection — premissas e runway", () => {
     expect(recurring[0]?.monthly).toBe(100);
     expect(days).toHaveLength(60);
     expect(firstDrop).toBeGreaterThanOrEqual(0);
-    expect(days.some((point) => point.saldo === 900)).toBe(true);
+    expect(days.some((point) => point.saldo === 800)).toBe(true);
     expect(days.every((point) => [1000, 900, 800].includes(point.saldo))).toBe(true);
     expect(
       days.every((point, index) => (point.saldo === 1000) === (index < firstDrop)),
@@ -161,11 +161,11 @@ describe("buildProjection — premissas e runway", () => {
   it("AC-006f: recorrência cuja próxima projeção cai exatamente após o horizonte não entra nas premissas", () => {
     const nowD = new Date();
     const dim = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
-    const target = 28; // dia-alvo da projeção de fronteira
-    const days = nowD.getDate() < target ? target - nowD.getDate() : dim - nowD.getDate() + target;
+    const F = (nowD.getDate() % 28) + 1; // 1..28, sempre diferente do dia de hoje
+    const days = nowD.getDate() < F ? F - nowD.getDate() : dim - nowD.getDate() + F;
     const description = "PROJECAO FRONTEIRA HORIZONTE";
     const rows = [6, 5, 4, 3, 2, 1].map((m) =>
-      tx(`horizon-edge-${m}`, dayInMonth(m, target), description),
+      tx(`horizon-edge-${m}`, dayInMonth(m, F), description),
     );
     repo.upsertTransactions("BANK", "acc-proj", rows as never[]);
 

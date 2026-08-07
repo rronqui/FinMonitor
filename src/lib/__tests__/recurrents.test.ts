@@ -153,4 +153,19 @@ describe("detectRecurrents — estabilidade e recency", () => {
     expect(found[0]?.occurrences).toBe(6);
   });
 
+  it("AC-003b: quatro meses em dois clusters fora de ±30% da mediana não são recorrência", () => {
+    const description = "CLUSTER INSTAVEL";
+    const amounts = ["-100.00", "-100.00", "-200.00", "-200.00"];
+    const rows = [3, 2, 1, 0].map((m, i) =>
+      tx(`unstable-cluster-${m}`, anchor(m), description, amounts[i]),
+    );
+    repo.upsertTransactions("BANK", "acc-unstable-cluster", rows as never[]);
+
+    expect(
+      analytics
+        .detectRecurrents()
+        .filter((r) => r.key === analytics.recKey("streaming", description)),
+    ).toHaveLength(0);
+  });
+
 });
