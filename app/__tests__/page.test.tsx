@@ -260,4 +260,18 @@ describe("OverviewPage", () => {
     const button = screen.getByRole("button", { name: "Sincronizando…" });
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
+  test("AC-007: exibe as premissas da projeção de caixa", () => {
+    mockState.projection = ok({
+      days: [{ day: "2026-08-07", saldo: 1000 }],
+      premissas: {
+        recorrentes: [{ key: "k", label: "Seguro", kind: "spend", monthly: 555.59 }],
+        unicos: [],
+      },
+    });
+
+    render(<OverviewPage />);
+
+    fireEvent.click(screen.getByText("O que entra nesta estimativa"));
+    expect(screen.getByText(/555,59/)).toBeTruthy();
+  });
 });

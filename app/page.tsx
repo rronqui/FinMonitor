@@ -279,14 +279,14 @@ function RecurrentsCard() {
                 <div className="min-w-0">
                   <button
                     onClick={() => {
-                      const from = new Date(Date.now() - 120 * 86_400_000).toISOString().slice(0, 10);
+                      const from = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
                       const to = new Date().toISOString().slice(0, 10);
                       router.push(
                         `/transacoes?range=custom&from=${from}&to=${to}&kind=${kind}&category=${encodeURIComponent(r.category)}&${r.descNorms.map((d) => `desc=${encodeURIComponent(d)}`).join("&")}`,
                       );
                     }}
                     className="block w-full truncate text-left text-text hover:opacity-80"
-                    title="Ver transações dos últimos 120 dias"
+                    title="Ver transações dos últimos 12 meses"
                   >
                     {r.label}
                   </button>
@@ -760,10 +760,26 @@ export default function OverviewPage() {
               </div>
               <p className="mt-2 text-[10px] text-muted">
                 {firstNegative
-                  ? `Atenção: saldo projetado fica negativo em ${dateBR(firstNegative.day)}. `
-                  : "Saldo projetado permanece positivo no horizonte de 60 dias. "}
-                Estimativa com recorrências e pagamentos únicos conhecidos — não é uma fatura futura.
+                  ? `Caixa em conta cobre compromissos até ${dateBR(firstNegative.day)}; a partir daí, depende de resgate de investimentos. `
+                  : "Caixa em conta cobre os compromissos conhecidos nos próximos 60 dias. "}
+                Estimativa só com recorrências comprovadas (≥3 meses estáveis e evidência recente) e pagamentos únicos conhecidos — não é uma fatura futura.
               </p>
+              {projection.data?.premissas &&
+                (projection.data.premissas.recorrentes.length > 0 || projection.data.premissas.unicos.length > 0) && (
+                  <details className="mt-1 text-[10px] text-muted">
+                    <summary className="cursor-pointer hover:text-text">O que entra nesta estimativa</summary>
+                    <ul className="mt-1 space-y-0.5">
+                      {projection.data.premissas.recorrentes.map((r) => (
+                        <li key={r.key}>
+                          {r.kind === "income" ? "+" : "−"} {brl(r.monthly)}/mês · {r.label}
+                        </li>
+                      ))}
+                      {projection.data.premissas.unicos.map((u, i) => (
+                        <li key={`${u.day}-${i}`}>− {brl(u.value)} em {dateBR(u.day)} · {u.label}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
             </>
           )}
           </CardBody>
