@@ -62,15 +62,22 @@ afterAll(() => {
 describe("buildProjection — premissas e runway", () => {
   it("AC-006a: recorrência estável entra nos dias e nas premissas", () => {
     const description = "PROJECAO SEGURO MENSAL";
-    const rows = [5, 4, 3, 2, 1, 0].map((m) =>
+    const rows = [6, 5, 4, 3, 2, 1].map((m) =>
       tx(`projection-stable-${m}`, dayInMonth(m, 10), description),
     );
     repo.upsertTransactions("BANK", "acc-proj", rows as never[]);
+
+    const nowD = new Date();
+    const firstExpected = nowD.getDate() <= 10
+      ? new Date(nowD.getFullYear(), nowD.getMonth(), 10)
+      : new Date(nowD.getFullYear(), nowD.getMonth() + 1, 10);
+    const expectedDay = `${firstExpected.getFullYear()}-${String(firstExpected.getMonth() + 1).padStart(2, "0")}-${String(firstExpected.getDate()).padStart(2, "0")}`;
 
     const res = analytics.buildProjection(60) as unknown as ProjectionResult;
     const days = res.days ?? [];
     const recurring = res.premissas?.recorrentes ?? [];
     const firstDrop = days.findIndex((point) => point.saldo !== 1000);
+    expect(days.find((point) => point.saldo !== 1000)?.day).toBe(expectedDay);
 
     expect(res.premissas).toBeDefined();
     expect(recurring).toHaveLength(1);
@@ -106,6 +113,7 @@ describe("buildProjection — premissas e runway", () => {
     const rows = [
       tx("projection-windfall-large-1", dayInMonth(4, 5), description, "10000.00", "salary"),
       tx("projection-windfall-large-2", dayInMonth(4, 6), description, "20000.00", "salary"),
+      tx("projection-windfall-small-middle", dayInMonth(2, 15), description, "100.00", "salary"),
       tx("projection-windfall-small", anchor(0), description, "100.00", "salary"),
     ];
     repo.upsertTransactions("BANK", "acc-proj", rows as never[]);
@@ -117,6 +125,53 @@ describe("buildProjection — premissas e runway", () => {
     expect(days).toHaveLength(60);
     expect(days.every((point) => point.saldo === 1000)).toBe(true);
     expect(res.premissas?.recorrentes ?? []).toHaveLength(0);
+  });
+
+  it("AC-006e: renda mensal estável recente entra como income", () => {
+    const description = "PROJECAO SALARIO FIXO";
+    const rows = [6, 5, 4, 3, 2, 1].map((m) =>
+      tx(`projection-income-${m}`, dayInMonth(m, 10), description, "2500.00", "salary"),
+    );
+    repo.upsertTransactions("BANK", "acc-proj", rows as never[]);
+
+    const nowD = new Date();
+    const firstExpected = nowD.getDate() <= 10
+      ? new Date(nowD.getFullYear(), nowD.getMonth(), 10)
+      : new Date(nowD.getFullYear(), nowD.getMonth() + 1, 10);
+    const expectedDay = `${firstExpected.getFullYear()}-${String(firstExpected.getMonth() + 1).padStart(2, "0")}-${String(firstExpected.getDate()).padStart(2, "0")}`;
+    const res = analytics.buildProjection(60) as unknown as ProjectionResult;
+    const days = res.days ?? [];
+    const recurring = res.premissas?.recorrentes ?? [];
+    const firstRise = days.findIndex((point) => point.saldo !== 1000);
+
+    expect(res.premissas).toBeDefined();
+    expect(recurring).toHaveLength(1);
+    expect(recurring[0]?.kind).toBe("income");
+    expect(recurring[0]?.monthly).toBe(2500);
+    expect(days).toHaveLength(60);
+    expect(firstRise).toBeGreaterThanOrEqual(0);
+    expect(days.find((point) => point.saldo !== 1000)?.day).toBe(expectedDay);
+    expect(days.some((point) => point.saldo === 3500)).toBe(true);
+    expect(days.every((point) => [1000, 3500, 6000].includes(point.saldo))).toBe(true);
+    expect(
+      days.every((point, index) => (point.saldo === 1000) === (index < firstRise)),
+    ).toBe(true);
+  });
+
+  it("AC-006f: recorrência cuja próxima projeção cai exatamente após o horizonte não entra nas premissas", () => {
+    const nowD = new Date();
+    const dim = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
+    const target = 28; // dia-alvo da projeção de fronteira
+    const days = nowD.getDate() < target ? target - nowD.getDate() : dim - nowD.getDate() + target;
+    const description = "PROJECAO FRONTEIRA HORIZONTE";
+    const rows = [6, 5, 4, 3, 2, 1].map((m) =>
+      tx(`horizon-edge-${m}`, dayInMonth(m, target), description),
+    );
+    repo.upsertTransactions("BANK", "acc-proj", rows as never[]);
+
+    const res = analytics.buildProjection(days) as unknown as ProjectionResult;
+    expect(res.premissas?.recorrentes ?? []).toHaveLength(0);
+    expect(res.days.every((point) => point.saldo === 1000)).toBe(true);
   });
 
   it("AC-006d: balloon payment entra no saldo no dia exato e nas premissas únicas", () => {

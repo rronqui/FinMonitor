@@ -38,6 +38,19 @@
 > `firstNegative` ±3 dias) porque os dados reais mudam com sync; os valores
 > absolutos da réplica de 2026-08-07 são referência, não contrato.
 
+## Reforço pós-review (fixtures de teste)
+
+Após o deep-review (rodada TestHardening), os fixtures foram fortalecidos sem
+renumerar ACs: **AC-001** passou a usar somas mensais variadas 90..120 (asserta
+a mediana sob variação real); o windfall do **AC-005** usa 3 meses para
+discriminar o filtro de estabilidade; caso positivo de income estável recente
+adicionado (`AC-006` em `recurrents.test.ts`, `AC-006e` em
+`projection.test.ts`); `AC-006a` asserta a data exata do primeiro delta;
+`projection-route.test.ts` cobre o wire da rota (RF-004); `AC-006f` cobre o
+off-by-one de horizonte (ocorrência em `today+days` fora de
+`today .. today+days-1` não entra). Ver seção "Reforço pós-review" em
+[spec.md](./spec.md).
+
 ## Fora de Escopo
 
 - Investimentos na projeção (permanecem ignorados por desenho; rodapé

@@ -114,8 +114,13 @@ janela do baseline.
   unicos: Array<{ day: string; value: number; label: string }> }`.
   `recorrentes` contém somente as recorrências que projetaram ≥1 delta no
   horizonte (contador por recorrência no loop), herdando a ordem por `monthly`
-  desc de `detectRecurrents`. `unicos` contém os balloon payments de loans com
-  label fixo `"Parcela única de empréstimo"`, ordenados por `day` asc.
+  desc de `detectRecurrents`. **Horizonte**, aqui, são os dias efetivamente
+  cobertos pelo loop de `days` (`today .. today+days-1`); recorrência sem
+  projeção dentro desse intervalo não aparece em `premissas.recorrentes`.
+  `unicos` contém os balloon payments de loans com label fixo
+  `"Parcela única de empréstimo"`, ordenados por `day` asc — lista todos os
+  balloon payments conhecidos, independentemente do horizonte pedido
+  (intencional: transparência de compromissos contratuais).
 - **RF-004:** a rota `app/api/bank/projection/route.ts` (único caller de
   `buildProjection`) passa a responder `{ days, premissas }`
   (`Response.json({ days: p.days, premissas: p.premissas })`).
@@ -193,6 +198,30 @@ janela do baseline.
   `firstNegative` ≈ 2026-10-04 (±3 dias de tolerância por sync recente); UI
   com rodapé de runway, `<details>` de premissas e "Custo fixo ≈" ≈ R$ 3,5k/mês
   (não ~R$ 8,9k da regra antiga).
+
+## Reforço pós-review (fixtures de teste)
+
+Após o deep-review, os fixtures de teste foram fortalecidos (rodada
+TestHardening), sem renumerar ACs — a cobertura nova mapeia para ACs
+existentes:
+
+- **AC-001:** somas mensais variadas (90..120 em torno da mediana 100) em vez
+  de valor constante — asserta que a mediana tolera variação real
+  (`recurrents.test.ts`, valores `-90/-100/-100/-110/-100/-120`).
+- **AC-005:** fixture do windfall estendido para 3 meses (créditos grandes no
+  mês -4, crédito pequeno no mês -2 e no mês 0) — discrimina o filtro de
+  estabilidade (<3 meses estáveis reprova), não mais o acidente da janela
+  antiga.
+- **Caso positivo de income:** renda estável recente (6 × R$ 2.500) é
+  detectada como `income` (`AC-006` em `recurrents.test.ts`) e entra na
+  projeção com delta positivo (`AC-006e` em `projection.test.ts`).
+- **Data exata do primeiro delta:** `AC-006a` asserta o dia ISO exato da
+  primeira queda de saldo, não apenas sua existência (`projection.test.ts`).
+- **Wire da rota:** `projection-route.test.ts` asserta que a rota responde
+  `{ days, premissas }` com recorrentes e únicos (RF-004).
+- **Off-by-one de horizonte:** `AC-006f` — recorrência cuja próxima ocorrência
+  cai no limite do horizonte (`today+days`, fora de `today .. today+days-1`)
+  não entra em `days` nem em `premissas.recorrentes`.
 
 ## Fora de Escopo
 

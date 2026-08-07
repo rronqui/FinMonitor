@@ -78,8 +78,9 @@ describe("detectRecurrents — estabilidade e recency", () => {
 
   it("AC-001: seis ocorrências mensais estáveis são detectadas com mediana e contagem corretas", () => {
     const description = "DISNEY PLUS";
-    const rows = [5, 4, 3, 2, 1, 0].map((m) =>
-      tx(`six-months-${m}`, anchor(m), description, "-100.00"),
+    const amounts = ["-90.00", "-100.00", "-100.00", "-110.00", "-100.00", "-120.00"];
+    const rows = [5, 4, 3, 2, 1, 0].map((m, i) =>
+      tx(`six-months-${m}`, anchor(m), description, amounts[i]),
     );
     repo.upsertTransactions("BANK", "acc-six-months", rows as never[]);
 
@@ -125,6 +126,7 @@ describe("detectRecurrents — estabilidade e recency", () => {
     const rows = [
       tx("windfall-large-1", dayInMonth(4, 5), description, "10000.00", "salary"),
       tx("windfall-large-2", dayInMonth(4, 6), description, "20000.00", "salary"),
+      tx("windfall-small-middle", dayInMonth(2, 15), description, "100.00", "salary"),
       tx("windfall-small", anchor(0), description, "100.00", "salary"),
     ];
     repo.upsertTransactions("BANK", "acc-windfall", rows as never[]);
@@ -135,4 +137,20 @@ describe("detectRecurrents — estabilidade e recency", () => {
         .filter((r) => r.key === analytics.recKey("salary", description)),
     ).toHaveLength(0);
   });
+  it("AC-006: renda mensal estável recente é detectada como income", () => {
+    const description = "SALARIO MENSAL FIXO";
+    const rows = [5, 4, 3, 2, 1, 0].map((m) =>
+      tx(`stable-income-${m}`, anchor(m), description, "2500.00", "salary"),
+    );
+    repo.upsertTransactions("BANK", "acc-stable-income", rows as never[]);
+
+    const found = analytics
+      .detectRecurrents()
+      .filter((r) => r.key === analytics.recKey("salary", description));
+    expect(found).toHaveLength(1);
+    expect(found[0]?.kind).toBe("income");
+    expect(found[0]?.monthly).toBe(2500);
+    expect(found[0]?.occurrences).toBe(6);
+  });
+
 });

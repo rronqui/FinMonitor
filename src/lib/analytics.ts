@@ -184,7 +184,12 @@ export function buildProjection(days: number): { days: ProjectionPoint[]; premis
   };
   const premissas: ProjectionPremissas = { recorrentes: [], unicos: [] };
 
-  const horizon = new Date(Date.now() + days * 86_400_000);
+  // Janela de saída: today..today+days-1 (chaves ISO UTC, mesma convenção dos
+  // deltas). Uma recorrência só entra nas premissas se projeta ≥1 delta DENTRO
+  // da janela; projeções no passado relativo a today nunca aparecem no gráfico.
+  const nowMs = Date.now();
+  const startDay = new Date(nowMs).toISOString().slice(0, 10);
+  const endDay = new Date(nowMs + (days - 1) * 86_400_000).toISOString().slice(0, 10);
   for (const r of detectRecurrents()) {
     const signed = r.kind === "income" ? r.monthly : -r.monthly;
     const anchor = new Date(`${r.lastDate}T00:00:00Z`);
@@ -198,10 +203,10 @@ export function buildProjection(days: number): { days: ProjectionPoint[]; premis
       }
       const feb = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 29 : 28;
       const dim = [31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
-      const dd = new Date(Date.UTC(y, m - 1, Math.min(r.lastDay, dim)));
-      if (dd > horizon) break;
-      addDelta(dd.toISOString().slice(0, 10), signed);
-      projectedOccurrences += 1;
+      const ddIso = new Date(Date.UTC(y, m - 1, Math.min(r.lastDay, dim))).toISOString().slice(0, 10);
+      if (ddIso > endDay) break;
+      addDelta(ddIso, signed);
+      if (ddIso >= startDay) projectedOccurrences += 1;
       m += 1;
     }
     if (projectedOccurrences > 0) {
