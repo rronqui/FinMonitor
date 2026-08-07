@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/rronqui/FinMonitor/compare/v1.5.0...v1.5.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* implementação ([#28](https://github.com/rronqui/FinMonitor/issues/28)) ([#29](https://github.com/rronqui/FinMonitor/issues/29)) ([05a3944](https://github.com/rronqui/FinMonitor/commit/05a394421cd70a504ad653eacf5bae41e2d40f3e))
+
 ## [1.5.0](https://github.com/rronqui/FinMonitor/compare/v1.4.0...v1.5.0) (2026-08-07)
 
 
