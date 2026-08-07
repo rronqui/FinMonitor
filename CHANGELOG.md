@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/rronqui/FinMonitor/compare/v1.4.0...v1.5.0) (2026-08-07)
+
+
+### Features
+
+* projeção de caixa e recorrentes honestos (runway, sem renda fantasma) ([#26](https://github.com/rronqui/FinMonitor/issues/26)) ([55e63d1](https://github.com/rronqui/FinMonitor/commit/55e63d148f2c6b67398565091cafe3ffcf868c1c))
+
 ## [1.4.0](https://github.com/rronqui/FinMonitor/compare/v1.3.0...v1.4.0) (2026-08-05)
 
 
