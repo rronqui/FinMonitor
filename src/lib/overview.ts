@@ -97,7 +97,7 @@ export function buildDestaques(args: {
   if (firstNegative)
     out.push({
       icon: "warn",
-      text: `Projeção de caixa fica negativa em ${dateBR(firstNegative.day)} (${brl(firstNegative.saldo)}).`,
+      text: `Caixa em conta fica negativo em ${dateBR(firstNegative.day)} (${brl(firstNegative.saldo)}) — resolva com resgate de investimento.`,
     });
   return out.slice(0, 4);
 }

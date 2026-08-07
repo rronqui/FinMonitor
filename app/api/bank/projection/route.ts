@@ -6,7 +6,8 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const raw = Number(url.searchParams.get("days") ?? 60);
     const days = Math.min(180, Math.max(1, Number.isFinite(raw) ? Math.floor(raw) : 60));
-    return Response.json({ days: buildProjection(days) });
+    const projection = buildProjection(days);
+    return Response.json({ days: projection.days, premissas: projection.premissas });
   } catch (err) {
     return bankError(err);
   }
