@@ -1,5 +1,6 @@
 {
   "dbPath": "data/finmonitor.db",
+  "schemaWatchPaths": ["src/lib/db.ts"],
   "buildCommand": "npm run build",
   "stopCommand": "npm run stop:server",
   "startCommand": "npm run start:server",
