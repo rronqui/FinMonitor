@@ -3,7 +3,7 @@ import { parseAmount } from "./format";
 import { normalizeDescription, prettifyCategory } from "./semantics";
 import type { TxKind } from "./semantics";
 
-const WINDOW_DAYS = 120;
+const WINDOW_DAYS = 365;
 
 export interface Recurrent {
   key: string;
@@ -22,10 +22,23 @@ export interface ProjectionPoint {
   saldo: number;
 }
 
+export interface ProjectionPremissas {
+  recorrentes: Array<{ key: string; label: string; kind: TxKind; monthly: number }>;
+  unicos: Array<{ day: string; value: number; label: string }>;
+}
+
 
 /** Arredonda para centavos (evita lixo de ponto flutuante em somas). */
 export function round2(v: number): number {
   return Math.round(v * 100) / 100;
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
 }
 
 function totalsBetween(fromIso: string, toIso: string): Totals {
@@ -53,11 +66,20 @@ interface RecurrenceAggregate extends Recurrent {
   lastDay: number;
 }
 
+interface RecurrenceItem {
+  day: string;
+  abs: number;
+  category: string;
+  kind: TxKind;
+  label: string;
+}
+
 /**
- * Recorrências mensais: últimos 120 dias, agrupando (category + descrição
- * normalizada); recorrente = >= 2 ocorrências em meses distintos. Valor
- * mensal = média de abs_amount; projeção repete o valor médio no mesmo dia
- * do mês da última ocorrência.
+ * Recorrências mensais: últimos 12 meses, agrupando (category + descrição
+ * normalizada); recorrente = ≥3 meses estáveis dentro de ±30% da mediana e no
+ * máximo 1 ciclo mensal perdido desde a última ocorrência. Valor mensal =
+ * mediana das somas mensais; projeção repete esse valor no mesmo dia do mês
+ * da última ocorrência.
  */
 export function detectRecurrents(): RecurrenceAggregate[] {
   const from = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
@@ -76,10 +98,7 @@ export function detectRecurrents(): RecurrenceAggregate[] {
     day: string;
   }>;
 
-  const groups = new Map<
-    string,
-    Array<{ day: string; abs: number; category: string; kind: TxKind; label: string }>
-  >();
+  const groups = new Map<string, RecurrenceItem[]>();
   for (const r of rows) {
     const label = r.description ?? "";
     const key = recKey(r.category, label);
@@ -105,6 +124,15 @@ export function detectRecurrents(): RecurrenceAggregate[] {
       cur.n += 1;
       byMonth.set(m, cur);
     }
+    const sums = [...byMonth.values()].map((v) => v.sum);
+    const med = median(sums);
+    const stableMonths = sums.filter((s) => s >= 0.7 * med && s <= 1.3 * med).length;
+    if (stableMonths < 3) continue;
+    const now = new Date();
+    const [ly, lm] = last.day.slice(0, 7).split("-").map(Number);
+    const missed = now.getFullYear() * 12 + now.getMonth() - (ly * 12 + lm - 1);
+    if (missed > 1) continue;
+    // agregado mensal (média de abs_amount por mês) para o deltaPct
     const ordered = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0]));
     let deltaPct: number | null = null;
     if (ordered.length >= 2) {
@@ -120,7 +148,7 @@ export function detectRecurrents(): RecurrenceAggregate[] {
       category: last.category,
       descNorm: normalizeDescription(last.label),
       kind: last.kind,
-      monthly: round2(items.reduce((s, i) => s + i.abs, 0) / items.length),
+      monthly: round2(med),
       distinctMonths: months.size,
       occurrences: items.length,
       lastDate: last.day,
@@ -141,7 +169,7 @@ interface LoanBalloonPayment {
  * mensais detectadas (sinal por kind) + pagamentos únicos conhecidos
  * (balloonPayments dos empréstimos, saída na dueDate).
  */
-export function buildProjection(days: number): ProjectionPoint[] {
+export function buildProjection(days: number): { days: ProjectionPoint[]; premissas: ProjectionPremissas } {
   const accounts = db()
     .prepare("SELECT type, balance FROM accounts")
     .all() as Array<{ type: string; balance: string | null }>;
@@ -154,13 +182,22 @@ export function buildProjection(days: number): ProjectionPoint[] {
     if (!day) return;
     deltas.set(day, (deltas.get(day) ?? 0) + v);
   };
+  const premissas: ProjectionPremissas = { recorrentes: [], unicos: [] };
 
-  const horizon = new Date(Date.now() + days * 86_400_000);
+  // Janela de saída: today..today+days-1 (chaves ISO UTC, mesma convenção dos
+  // deltas). Uma recorrência só entra nas premissas se projeta ≥1 delta DENTRO
+  // da janela; projeções no passado relativo a today nunca aparecem no gráfico.
+  const nowMs = Date.now();
+  const fmtLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const startDay = fmtLocal(new Date(nowMs));
+  const endDay = fmtLocal(new Date(nowMs + (days - 1) * 86_400_000));
   for (const r of detectRecurrents()) {
     const signed = r.kind === "income" ? r.monthly : -r.monthly;
     const anchor = new Date(`${r.lastDate}T00:00:00Z`);
     let y = anchor.getUTCFullYear();
     let m = anchor.getUTCMonth() + 2; // primeira projeção: mês seguinte ao da última ocorrência
+    let projectedOccurrences = 0;
     for (let k = 0; k < 12; k++) {
       while (m > 12) {
         m -= 12;
@@ -168,10 +205,14 @@ export function buildProjection(days: number): ProjectionPoint[] {
       }
       const feb = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 29 : 28;
       const dim = [31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
-      const dd = new Date(Date.UTC(y, m - 1, Math.min(r.lastDay, dim)));
-      if (dd > horizon) break;
-      addDelta(dd.toISOString().slice(0, 10), signed);
+      const ddIso = new Date(Date.UTC(y, m - 1, Math.min(r.lastDay, dim))).toISOString().slice(0, 10);
+      if (ddIso > endDay) break;
+      addDelta(ddIso, signed);
+      if (ddIso >= startDay) projectedOccurrences += 1;
       m += 1;
+    }
+    if (projectedOccurrences > 0) {
+      premissas.recorrentes.push({ key: r.key, label: r.label, kind: r.kind, monthly: r.monthly });
     }
   }
 
@@ -188,8 +229,10 @@ export function buildProjection(days: number): ProjectionPoint[] {
       const due = bp.dueDate?.slice(0, 10);
       if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 || !due) continue;
       addDelta(due, -value);
+      premissas.unicos.push({ day: due, value, label: "Parcela única de empréstimo" });
     }
   }
+  premissas.unicos.sort((a, b) => a.day.localeCompare(b.day));
 
   const today = new Date();
   const out: ProjectionPoint[] = [];
@@ -200,7 +243,7 @@ export function buildProjection(days: number): ProjectionPoint[] {
     running += deltas.get(day) ?? 0;
     out.push({ day, saldo: round2(running) });
   }
-  return out;
+  return { days: out, premissas };
 }
 
 

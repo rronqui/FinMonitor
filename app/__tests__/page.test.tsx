@@ -231,6 +231,27 @@ describe("OverviewPage", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Entradas" }).at(-1)!);
     expect(screen.getByText("Nenhuma entrada recorrente detectada")).toBeTruthy();
   });
+  test("RF-008: abre recorrência com janela de 365 dias e filtros", () => {
+    mockState.recurrents = ok({
+      recorrentes: [
+        { key: "housing::aluguel", label: "Aluguel", category: "housing", descNorm: "aluguel", kind: "spend", monthly: 100, occurrences: 6, lastDate: "2026-07-01", deltaPct: null },
+      ],
+    });
+
+    render(<OverviewPage />);
+
+    const button = screen.getByTitle("Ver transações dos últimos 12 meses");
+    expect(button.textContent).toBe("Housing");
+
+    const from = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+    const to = new Date().toISOString().slice(0, 10);
+    fireEvent.click(button);
+
+    expect(pushSpy).toHaveBeenCalledWith(
+      `/transacoes?range=custom&from=${from}&to=${to}&kind=spend&category=housing&desc=aluguel`,
+    );
+  });
+
 
   test("AC-009: define orçamento e persiste o limite com percentual", () => {
     mockState.budgetsSpent = ok({ categories: [{ key: "food", spent: 100 }] });
@@ -259,5 +280,19 @@ describe("OverviewPage", () => {
     view.rerender(<OverviewPage />);
     const button = screen.getByRole("button", { name: "Sincronizando…" });
     expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+  test("AC-007: exibe as premissas da projeção de caixa", () => {
+    mockState.projection = ok({
+      days: [{ day: "2026-08-07", saldo: 1000 }],
+      premissas: {
+        recorrentes: [{ key: "k", label: "Seguro", kind: "spend", monthly: 555.59 }],
+        unicos: [],
+      },
+    });
+
+    render(<OverviewPage />);
+
+    fireEvent.click(screen.getByText("O que entra nesta estimativa"));
+    expect(screen.getByText(/555,59/)).toBeTruthy();
   });
 });

@@ -230,7 +230,7 @@ describe("overview helpers", () => {
       });
 
       expect(result).toEqual([
-        expect.objectContaining({ icon: "warn", text: expect.stringContaining("Projeção de caixa fica negativa em") }),
+        expect.objectContaining({ icon: "warn", text: expect.stringContaining("Caixa em conta fica negativo em") }),
       ]);
     });
   });

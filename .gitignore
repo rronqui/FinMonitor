@@ -6,3 +6,4 @@ logs/
 .server.pid
 tsconfig.tsbuildinfo
 .omp/
+.playwright-cli/

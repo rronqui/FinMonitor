@@ -242,10 +242,23 @@ export function useInvestmentMovements(investmentId: string, enabled: boolean) {
   });
 }
 
+export interface ProjectionPremissas {
+  recorrentes: Array<{ key: string; label: string; kind: TxKind; monthly: number }>;
+  unicos: Array<{ day: string; value: number; label: string }>;
+}
+
+export interface ProjectionPayload {
+  days: Array<{ day: string; saldo: number }>;
+  premissas?: ProjectionPremissas;
+}
+
 export function useProjection(days = 60) {
   return useQuery({
     queryKey: ["projection", days],
-    queryFn: () => fetchJson<{ days: Array<{ day: string; saldo: number }> }>(`/api/bank/projection?days=${days}`),
+    queryFn: () =>
+      fetchJson<ProjectionPayload>(
+        `/api/bank/projection?days=${days}`,
+      ),
   });
 }
 
